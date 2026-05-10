@@ -621,7 +621,7 @@ html, body {
 <!-- TREINO -->
 <div id="sec-treino" class="sec">
   <div class="sec-title">Treino</div>
-  <div class="sec-sub">Seg BJJ · Ter Academia · Qua BJJ+Academia · Qui Academia · Sex BJJ · Sab/Dom Descanso</div>
+  <div class="sec-sub">Seg BJJ+Academia · Ter BJJ · Qua Academia · Qui Academia · Sex BJJ 19:30 · Sab Descanso · Dom JJ Opcional</div>
   <div id="treino-cards"></div>
 </div>
 
@@ -891,22 +891,12 @@ const mensalDefault=[
 ];
 
 const treinoDefault={
-  0:{tipo:'desc',nome:'Descanso',desc:'Descanso total.',ex:[
-    {n:'Sem treino',d:'Recuperacao'},
+  0:{tipo:'bjj',nome:'Jiu-jitsu (opcional)',desc:'Domingo — JJ opcional. Sem obrigacao. Se o corpo pedir, vai. Se precisar descansar, descansa.',ex:[
+    {n:'Tecnica',d:'Opcional'},
+    {n:'Sparring leve',d:'Opcional'},
+    {n:'Rolagem',d:'Opcional'},
   ]},
-  1:{tipo:'bjj',nome:'Jiu-jitsu',desc:'16h ou 19:30. So tatame.',ex:[
-    {n:'Tecnica',d:''},
-    {n:'Sparring',d:''},
-    {n:'Rolagem',d:''},
-  ]},
-  2:{tipo:'musc',nome:'Academia — Peito + Ombro + Triceps',desc:'Sessao principal de peito. Cargas maximas. Falha controlada nas ultimas series.',ex:[
-    {n:'Supino plano barra',d:'4x5 (forca)'},
-    {n:'Supino inclinado haltere',d:'3x8-10'},
-    {n:'Crucifixo inclinado / fly maquina',d:'3x12'},
-    {n:'Desenvolvimento ombro maquina ou haltere',d:'3x10'},
-    {n:'Triceps corda ou frances',d:'3x12'},
-  ]},
-  3:{tipo:'bjj',nome:'Jiu-jitsu + Academia — Costas + Biceps',desc:'JJ vem antes (16h). Academia apos o treino — carga moderada, sem falha muscular. Nao e dia de bater recorde.',ex:[
+  1:{tipo:'bjj',nome:'JJ + Academia — Costas + Biceps',desc:'JJ vem antes (16h). Academia logo apos — carga moderada, sem falha muscular. Retorno as 18h.',ex:[
     {n:'JIU-JITSU (16h)',d:'Primeiro'},
     {n:'Barra fixa / lat pulldown',d:'4x max ou 4x8-10'},
     {n:'Remada unilateral haltere',d:'3x10'},
@@ -914,7 +904,19 @@ const treinoDefault={
     {n:'Rosca direta',d:'3x12'},
     {n:'Face pull',d:'3x15'},
   ]},
-  4:{tipo:'musc',nome:'Academia — Peito 2 + Inferior',desc:'Peito em angulos diferentes da terca. Perna com carga controlada — sexta e JJ.',ex:[
+  2:{tipo:'bjj',nome:'Jiu-jitsu',desc:'Terca — so tatame. 16h, retorno as 17:30. Sem academia.',ex:[
+    {n:'Tecnica',d:''},
+    {n:'Sparring',d:''},
+    {n:'Rolagem',d:''},
+  ]},
+  3:{tipo:'musc',nome:'Academia — Peito + Ombro + Triceps',desc:'Quarta — dia pesado sem JJ. Sessao principal de peito. Cargas maximas. Falha controlada nas ultimas series. Retorno as 17:30.',ex:[
+    {n:'Supino plano barra',d:'4x5 (forca)'},
+    {n:'Supino inclinado haltere',d:'3x8-10'},
+    {n:'Crucifixo inclinado / fly maquina',d:'3x12'},
+    {n:'Desenvolvimento ombro maquina ou haltere',d:'3x10'},
+    {n:'Triceps corda ou frances',d:'3x12'},
+  ]},
+  4:{tipo:'musc',nome:'Academia — Peito 2 + Inferior',desc:'Quinta — peito em angulos diferentes da quarta. Perna com carga controlada. Retorno as 17:30.',ex:[
     {n:'Supino declinado',d:'3x8'},
     {n:'Crossover baixo / fly maquina',d:'3x12'},
     {n:'Mergulho / Dip',d:'3x10'},
@@ -923,13 +925,14 @@ const treinoDefault={
     {n:'Hip thrust',d:'3x12'},
     {n:'Panturrilha',d:'3x15'},
   ]},
-  5:{tipo:'bjj',nome:'Jiu-jitsu',desc:'So tatame. Nada de academia.',ex:[
+  5:{tipo:'bjj',nome:'Jiu-jitsu (noturno)',desc:'Sexta — JJ as 19:30. Descanso / tempo livre ate la. Nada de academia.',ex:[
+    {n:'JIU-JITSU (19:30)',d:'Noturno'},
     {n:'Tecnica',d:''},
     {n:'Sparring',d:''},
     {n:'Rolagem',d:''},
   ]},
-  6:{tipo:'desc',nome:'Descanso / Mobilidade',desc:'Recuperacao ativa. Sem carga.',ex:[
-    {n:'Mobilidade / alongamento',d:''},
+  6:{tipo:'desc',nome:'Descanso / Tarde livre',desc:'Sabado — tarde livre a partir das 14:45. Recuperacao ativa. Sem carga obrigatoria.',ex:[
+    {n:'Mobilidade / alongamento',d:'Opcional'},
     {n:'Caminhada leve',d:'Opcional'},
   ]},
 };
@@ -944,7 +947,7 @@ let appState={
   fin:{prolabore:0,extra:0,despesa:2000,lan:[],metas:{resAlvo:0,resAtual:0,aporte:0,espNome:'',espAlvo:0,espAtual:0}},
 };
 try{const s=localStorage.getItem('chefe_app');if(s){const p=JSON.parse(s);Object.assign(appState,p);}}catch(e){}
-if(!localStorage.getItem('treino_v2')){appState.treino=JSON.parse(JSON.stringify(treinoDefault));localStorage.setItem('treino_v2','1');try{localStorage.setItem('chefe_app',JSON.stringify(appState));}catch(e){}}
+if(!localStorage.getItem('treino_v3')){appState.treino=JSON.parse(JSON.stringify(treinoDefault));localStorage.setItem('treino_v3','1');try{localStorage.setItem('chefe_app',JSON.stringify(appState));}catch(e){}}
 
 function save(){try{localStorage.setItem('chefe_app',JSON.stringify(appState));}catch(e){}}
 function today(){return new Date().toISOString().slice(0,10);}
@@ -1179,7 +1182,7 @@ function renderTreino(){
     const t=appState.treino[d];if(!t)return;
     const isToday=d===dow;
     const tagCls=t.tipo==='musc'?'tag-musc':t.tipo==='bjj'?'tag-bjj':'tag-desc';
-    const tagTxt=t.tipo==='musc'?'Academia':t.tipo==='bjj'?(d===3?'BJJ + Academia':'BJJ'):'Descanso';
+    const tagTxt=t.tipo==='musc'?'Academia':t.tipo==='bjj'?(d===1?'BJJ + Academia':'BJJ'):'Descanso';
     const iconBg=t.tipo==='musc'?'var(--accent-dim)':t.tipo==='bjj'?'var(--blue-dim)':'var(--border2)';
     const iconColor=t.tipo==='musc'?'var(--accent)':t.tipo==='bjj'?'var(--blue)':'var(--muted)';
 
