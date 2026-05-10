@@ -486,6 +486,15 @@ html, body {
 .fogo-txt { flex:1; font-size:13px; color:var(--text); font-weight:500; cursor:pointer; }
 .fogo-txt.on { color:var(--muted); text-decoration:line-through; }
 
+/* MÉTODO PAGAMENTO */
+.g-cred { background:var(--purple-dim); color:var(--purple); }
+.g-pix  { background:var(--accent-dim); color:var(--accent); }
+.g-ted  { background:var(--blue-dim);   color:var(--blue);   }
+.g-din  { background:var(--amber-dim);  color:var(--amber);  }
+.lan-week-hdr { display:flex; justify-content:space-between; font-size:10px; font-weight:700; color:var(--muted); font-family:'DM Mono',monospace; letter-spacing:.06em; padding:10px 0 4px; border-top:1px solid var(--border); }
+.lan-week-hdr:first-child { border-top:none; padding-top:0; }
+.lan-week-total { color:var(--text); }
+
 /* AGENDA */
 .ag-hoje-card {
   background: var(--accent-dim);
@@ -682,89 +691,40 @@ html, body {
 <!-- FINANCEIRO -->
 <div id="sec-financeiro" class="sec">
   <div class="sec-title">Financeiro</div>
-  <div class="sec-sub">Primeiro caixa. Depois patrimônio. Depois liberdade.</div>
+  <div class="sec-sub">Registre seus gastos. Toda quinta, copie para a planilha.</div>
 
   <div class="card">
-    <div class="card-lbl">Renda mensal</div>
-    <div class="fin-inp-row">
-      <div><div class="fin-lbl">Pró-labore (R$)</div><div class="fin-sub-lbl">Salário fixo da empresa</div></div>
-      <input class="fin-inp" id="f-prolabore" type="number" placeholder="0,00" oninput="calcFin()"/>
+    <div class="card-lbl">Novo lançamento</div>
+    <div class="ag-form-col">
+      <input class="lan-inp" id="lan-desc" placeholder="Descrição (ex: Mercado, Farmácia...)" style="width:100%"/>
+      <div class="ag-row">
+        <input class="lan-inp" id="lan-val" type="number" placeholder="R$ 0,00" inputmode="decimal" style="flex:1"/>
+        <select class="lan-sel" id="lan-met" style="flex:1.4;padding:9px 10px;font-size:12px;color:var(--text)">
+          <option value="credito">Cartão Crédito</option>
+          <option value="pix">Pix</option>
+          <option value="ted">TED</option>
+          <option value="dinheiro">Dinheiro</option>
+        </select>
+      </div>
+      <button class="lan-btn" onclick="addLan()" style="width:100%;padding:11px;font-size:13px">Lançar</button>
     </div>
-    <div class="fin-inp-row">
-      <div><div class="fin-lbl">Distribuição extra (R$)</div><div class="fin-sub-lbl">Lucros variáveis</div></div>
-      <input class="fin-inp" id="f-extra" type="number" placeholder="0,00" oninput="calcFin()"/>
-    </div>
-    <div class="fin-inp-row" style="border:none">
-      <div><div class="fin-lbl">Despesa mensal (R$)</div><div class="fin-sub-lbl">Estimativa atual</div></div>
-      <input class="fin-inp" id="f-despesa" type="number" value="2000" oninput="calcFin()"/>
-    </div>
-    <button class="save-btn primary" onclick="saveFin()">Salvar</button>
-  </div>
-
-  <div class="met-grid" style="grid-template-columns:repeat(2,1fr)">
-    <div class="met"><div class="met-v" id="f-renda">R$0</div><div class="met-l">Renda total</div></div>
-    <div class="met"><div class="met-v" id="f-sobra">R$0</div><div class="met-l">Sobra/mês</div></div>
-    <div class="met"><div class="met-v" id="f-res">R$0</div><div class="met-l">Meta reserva</div><div class="prog"><div class="prog-f" id="f-res-bar" style="width:0%;background:var(--accent)"></div></div></div>
-    <div class="met"><div class="met-v" id="f-aporte">R$0</div><div class="met-l">Aporte/mês</div></div>
   </div>
 
   <div class="card">
-    <div class="card-lbl">Distribuição da sobra</div>
-    <div id="f-distrib"></div>
+    <div class="card-lbl">
+      <span id="lan-semana-lbl">Esta semana</span>
+      <span id="lan-semana-total" style="color:var(--text);font-family:'DM Mono',monospace;font-size:12px;font-weight:700"></span>
+    </div>
+    <div id="lan-semana-list"></div>
   </div>
 
-  <div class="card">
-    <div class="card-lbl">Lançamentos — <span id="f-mes-lbl" style="color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400"></span></div>
-    <div class="lan-form">
-      <input class="lan-inp" id="lan-desc" placeholder="Descrição..." />
-      <input class="lan-inp" id="lan-val" type="number" placeholder="R$" style="max-width:90px"/>
-      <select class="lan-sel" id="lan-cat">
-        <option value="fix">Fixo</option>
-        <option value="var">Variável</option>
-        <option value="inv">Invest.</option>
-      </select>
-      <button class="lan-btn" onclick="addLan()">+</button>
+  <div class="card" id="lan-hist-card" style="display:none">
+    <div class="card-lbl">
+      <span>Semanas anteriores</span>
+      <button class="edit-toggle" id="lan-hist-btn" onclick="toggleLanHist()">Ver</button>
     </div>
-    <div id="lan-list"></div>
-    <div style="display:flex;justify-content:space-between;padding-top:10px;font-size:13px;color:var(--muted);border-top:1px solid var(--border);margin-top:4px">
-      <span>Total gasto</span>
-      <span id="lan-total" style="font-weight:700;color:var(--text);font-family:'DM Mono',monospace">R$0</span>
-    </div>
+    <div id="lan-hist-list" style="display:none"></div>
   </div>
-
-  <!-- METAS -->
-  <div class="meta-block">
-    <div class="meta-label">Prioridade 1</div>
-    <div class="meta-title">Reserva de emergência</div>
-    <div class="meta-inp-row">
-      <input class="meta-inp" id="m-res-alvo" type="number" placeholder="Meta R$" oninput="calcMetas()"/>
-      <input class="meta-inp" id="m-res-atual" type="number" placeholder="Atual R$" oninput="calcMetas()"/>
-    </div>
-    <div class="prog" style="height:5px"><div class="prog-f" id="m-res-bar" style="width:0%;background:var(--accent)"></div></div>
-    <div class="meta-info" id="m-res-info">Regra: 6x sua despesa mensal → R$12.000</div>
-  </div>
-
-  <div class="meta-block">
-    <div class="meta-label">Prioridade 2</div>
-    <div class="meta-title">Aporte mensal fixo</div>
-    <div class="meta-inp-row">
-      <input class="meta-inp" id="m-aporte" type="number" placeholder="R$/mês" oninput="calcMetas()"/>
-    </div>
-    <div class="meta-info" id="m-aporte-info">Sai no dia 1 — antes de qualquer despesa.</div>
-  </div>
-
-  <div class="meta-block">
-    <div class="meta-label">Prioridade 3</div>
-    <input class="meta-inp" id="m-esp-nome" placeholder="Nome da meta (ex: Passagem EUA)" style="margin-bottom:8px;width:100%"/>
-    <div class="meta-inp-row">
-      <input class="meta-inp" id="m-esp-alvo" type="number" placeholder="Alvo R$" oninput="calcMetas()"/>
-      <input class="meta-inp" id="m-esp-atual" type="number" placeholder="Atual R$" oninput="calcMetas()"/>
-    </div>
-    <div class="prog" style="height:5px;margin-top:8px"><div class="prog-f" id="m-esp-bar" style="width:0%;background:var(--purple)"></div></div>
-    <div class="meta-info" id="m-esp-info"></div>
-  </div>
-
-  <button class="save-btn primary" onclick="saveMetas()">Salvar metas</button>
 </div>
 
 <!-- AGENDA -->
@@ -1341,124 +1301,100 @@ function addEx(d){
 function delEx(d,i){appState.treino[d].ex.splice(i,1);save();renderExList(d);}
 
 // ── FINANCEIRO ────────────────────────────────────────────────────────────────
-function loadFin(){
-  const f=appState.fin;
-  document.getElementById('f-prolabore').value=f.prolabore||'';
-  document.getElementById('f-extra').value=f.extra||'';
-  document.getElementById('f-despesa').value=f.despesa||2000;
-  const now=new Date();
-  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  document.getElementById('f-mes-lbl').textContent=months[now.getMonth()]+' '+now.getFullYear();
-  calcFin();
-  document.getElementById('m-res-alvo').value=f.metas.resAlvo||'';
-  document.getElementById('m-res-atual').value=f.metas.resAtual||'';
-  document.getElementById('m-aporte').value=f.metas.aporte||'';
-  document.getElementById('m-esp-nome').value=f.metas.espNome||'';
-  document.getElementById('m-esp-alvo').value=f.metas.espAlvo||'';
-  document.getElementById('m-esp-atual').value=f.metas.espAtual||'';
-  calcMetas();renderLan();
-}
+const MET_MAP={credito:['Crédito','g-cred'],pix:['Pix','g-pix'],ted:['TED','g-ted'],dinheiro:['Dinheiro','g-din']};
 
-function calcFin(){
-  const pl=parseFloat(document.getElementById('f-prolabore').value)||0;
-  const ex=parseFloat(document.getElementById('f-extra').value)||0;
-  const desp=parseFloat(document.getElementById('f-despesa').value)||2000;
-  const renda=pl+ex;const sobra=Math.max(0,renda-desp);
-  document.getElementById('f-renda').textContent='R$'+renda.toLocaleString('pt-BR');
-  document.getElementById('f-sobra').textContent='R$'+sobra.toLocaleString('pt-BR');
-  document.getElementById('f-res').textContent='R$'+(desp*6).toLocaleString('pt-BR');
-  document.getElementById('f-aporte').textContent='R$'+Math.round(sobra*0.2).toLocaleString('pt-BR');
-  const resAtual=parseFloat(document.getElementById('m-res-atual')?.value)||appState.fin.metas.resAtual||0;
-  const resPct=desp>0?Math.min(100,Math.round(resAtual/(desp*6)*100)):0;
-  document.getElementById('f-res-bar').style.width=resPct+'%';
-  renderDistrib(sobra);
+function getWeekStart(dateStr){
+  const d=new Date(dateStr+'T12:00:00');
+  const dow=d.getDay();
+  const back=(dow>=4)?dow-4:dow+3;
+  d.setDate(d.getDate()-back);
+  return d.toISOString().slice(0,10);
 }
+function getWeekEnd(ws){const d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
+function fmtDMY(ds){const d=new Date(ds+'T12:00:00');return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;}
 
-function renderDistrib(sobra){
-  const el=document.getElementById('f-distrib');if(!el)return;el.innerHTML='';
-  if(sobra<=0){el.innerHTML='<div class="empty">Defina renda acima das despesas.</div>';return;}
-  const cats=[
-    {n:'Reserva de emergencia',p:30,c:'var(--accent)'},
-    {n:'Investimento',p:20,c:'var(--blue)'},
-    {n:'Meta especifica',p:15,c:'var(--purple)'},
-    {n:'Lazer consciente',p:10,c:'var(--amber)'},
-    {n:'Buffer / imprevistos',p:25,c:'var(--muted)'},
-  ];
-  cats.forEach(c=>{
-    const val=Math.round(sobra*(c.p/100));
-    const row=document.createElement('div');row.className='distrib-row';
-    row.innerHTML=`<div class="distrib-dot" style="background:${c.c}"></div><span class="distrib-cat">${c.n}</span><span class="distrib-pct">${c.p}%</span><span class="distrib-val">R$${val.toLocaleString('pt-BR')}</span>`;
-    el.appendChild(row);
-  });
-}
-
-function saveFin(){
-  appState.fin.prolabore=parseFloat(document.getElementById('f-prolabore').value)||0;
-  appState.fin.extra=parseFloat(document.getElementById('f-extra').value)||0;
-  appState.fin.despesa=parseFloat(document.getElementById('f-despesa').value)||2000;
-  save();calcFin();
-}
+function loadFin(){renderLan();}
 
 function addLan(){
   const desc=document.getElementById('lan-desc').value.trim();
   const val=parseFloat(document.getElementById('lan-val').value)||0;
-  const cat=document.getElementById('lan-cat').value;
+  const metodo=document.getElementById('lan-met').value;
   if(!desc||!val)return;
-  const mes=new Date().toISOString().slice(0,7);
-  appState.fin.lan.push({desc,val,cat,mes,id:Date.now()});
-  document.getElementById('lan-desc').value='';document.getElementById('lan-val').value='';
+  if(!appState.fin.lan)appState.fin.lan=[];
+  appState.fin.lan.push({id:Date.now(),desc,val,metodo,data:today()});
+  document.getElementById('lan-desc').value='';
+  document.getElementById('lan-val').value='';
   save();renderLan();
 }
-document.getElementById('lan-desc').addEventListener('keydown',e=>{if(e.key==='Enter')addLan();});
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('lan-desc');
+  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')addLan();});
+});
+
+function makeLanRow(l){
+  const[mt,mc]=MET_MAP[l.metodo]||['?','g-din'];
+  const row=document.createElement('div');row.className='gasto-item';
+  const dateTag=l.data?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;flex-shrink:0">${fmtDMY(l.data)}</span>`:'';
+  row.innerHTML=`<span class="gasto-lbl ${mc}">${mt}</span>${dateTag}<span class="g-name">${l.desc}</span><span class="g-val">R$${l.val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><button class="g-del" onclick="delLan(${l.id})">×</button>`;
+  return row;
+}
 
 function renderLan(){
-  const el=document.getElementById('lan-list');if(!el)return;el.innerHTML='';
-  const mes=new Date().toISOString().slice(0,7);
-  const items=(appState.fin.lan||[]).filter(l=>l.mes===mes).sort((a,b)=>b.id-a.id);
-  let total=0;
-  if(items.length===0){el.innerHTML='<div class="empty">Nenhum lancamento este mes.</div>';}
-  items.forEach(l=>{
-    total+=l.val;
-    const lMap={fix:['Fixo','g-fix'],var:['Var','g-var'],inv:['Inv','g-inv']};
-    const [lt,lc]=lMap[l.cat]||['Fixo','g-fix'];
-    const row=document.createElement('div');row.className='gasto-item';
-    row.innerHTML=`<span class="gasto-lbl ${lc}">${lt}</span><span class="g-name">${l.desc}</span><span class="g-val">R$${l.val.toLocaleString('pt-BR')}</span><button class="g-del" onclick="delLan(${l.id})">x</button>`;
-    el.appendChild(row);
+  const td=today();
+  const ws=getWeekStart(td);
+  const all=(appState.fin.lan||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id-a.id);
+  const thisWeek=all.filter(l=>(l.data||'')>=ws);
+  const older=all.filter(l=>(l.data||'')<ws);
+
+  const lblEl=document.getElementById('lan-semana-lbl');
+  if(lblEl)lblEl.textContent=`Qui ${fmtDMY(ws)} → Qua ${fmtDMY(getWeekEnd(ws))}`;
+
+  const totEl=document.getElementById('lan-semana-total');
+  const weekSum=thisWeek.reduce((s,l)=>s+(l.val||0),0);
+  if(totEl)totEl.textContent=thisWeek.length?'R$'+weekSum.toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
+
+  const semEl=document.getElementById('lan-semana-list');
+  if(semEl){
+    semEl.innerHTML='';
+    if(thisWeek.length===0){semEl.innerHTML='<div class="empty">Nenhum lançamento nesta semana.</div>';}
+    else thisWeek.forEach(l=>semEl.appendChild(makeLanRow(l)));
+  }
+
+  const histCard=document.getElementById('lan-hist-card');
+  if(histCard)histCard.style.display=older.length?'block':'none';
+  if(lanHistOpen)renderLanHist(older);
+}
+
+function renderLanHist(older){
+  const el=document.getElementById('lan-hist-list');if(!el)return;
+  el.innerHTML='';
+  const weeks={};
+  older.forEach(l=>{const ws=l.data?getWeekStart(l.data):'old';if(!weeks[ws])weeks[ws]=[];weeks[ws].push(l);});
+  Object.keys(weeks).sort((a,b)=>b.localeCompare(a)).forEach(ws=>{
+    const items=weeks[ws];
+    const sum=items.reduce((s,l)=>s+(l.val||0),0);
+    const lbl=ws!=='old'?`Qui ${fmtDMY(ws)} → Qua ${fmtDMY(getWeekEnd(ws))}`:'Anteriores';
+    const hdr=document.createElement('div');hdr.className='lan-week-hdr';
+    hdr.innerHTML=`<span>${lbl}</span><span class="lan-week-total">R$${sum.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
+    el.appendChild(hdr);
+    items.forEach(l=>el.appendChild(makeLanRow(l)));
   });
-  document.getElementById('lan-total').textContent='R$'+total.toLocaleString('pt-BR');
-}
-function delLan(id){appState.fin.lan=appState.fin.lan.filter(l=>l.id!==id);save();renderLan();}
-
-function calcMetas(){
-  const resAlvo=parseFloat(document.getElementById('m-res-alvo')?.value)||0;
-  const resAtual=parseFloat(document.getElementById('m-res-atual')?.value)||0;
-  const aporte=parseFloat(document.getElementById('m-aporte')?.value)||0;
-  const espAlvo=parseFloat(document.getElementById('m-esp-alvo')?.value)||0;
-  const espAtual=parseFloat(document.getElementById('m-esp-atual')?.value)||0;
-  const resPct=resAlvo>0?Math.min(100,Math.round(resAtual/resAlvo*100)):0;
-  const resBar=document.getElementById('m-res-bar');if(resBar)resBar.style.width=resPct+'%';
-  const resInfo=document.getElementById('m-res-info');
-  if(resInfo)resInfo.textContent=resAlvo>0?`R$${resAtual.toLocaleString('pt-BR')} de R$${resAlvo.toLocaleString('pt-BR')} (${resPct}%)`:'Regra: 6x sua despesa mensal';
-  const apInfo=document.getElementById('m-aporte-info');
-  if(apInfo&&aporte>0){const meses=resAlvo>resAtual&&aporte>0?Math.ceil((resAlvo-resAtual)/aporte):0;apInfo.textContent=meses>0?`Com R$${aporte.toLocaleString('pt-BR')}/mes — reserva completa em ${meses} meses.`:`Aporte definido: R$${aporte.toLocaleString('pt-BR')}/mes.`;}
-  const espPct=espAlvo>0?Math.min(100,Math.round(espAtual/espAlvo*100)):0;
-  const espBar=document.getElementById('m-esp-bar');if(espBar)espBar.style.width=espPct+'%';
-  const espInfo=document.getElementById('m-esp-info');
-  const espNome=document.getElementById('m-esp-nome')?.value||'Meta';
-  if(espInfo&&espAlvo>0)espInfo.textContent=`${espNome}: R$${espAtual.toLocaleString('pt-BR')} de R$${espAlvo.toLocaleString('pt-BR')} (${espPct}%)`;
-  calcFin();
 }
 
-function saveMetas(){
-  appState.fin.metas={
-    resAlvo:parseFloat(document.getElementById('m-res-alvo').value)||0,
-    resAtual:parseFloat(document.getElementById('m-res-atual').value)||0,
-    aporte:parseFloat(document.getElementById('m-aporte').value)||0,
-    espNome:document.getElementById('m-esp-nome').value||'',
-    espAlvo:parseFloat(document.getElementById('m-esp-alvo').value)||0,
-    espAtual:parseFloat(document.getElementById('m-esp-atual').value)||0,
-  };
-  save();calcMetas();
+function delLan(id){appState.fin.lan=(appState.fin.lan||[]).filter(l=>l.id!==id);save();renderLan();}
+
+let lanHistOpen=false;
+function toggleLanHist(){
+  lanHistOpen=!lanHistOpen;
+  const el=document.getElementById('lan-hist-list');
+  const btn=document.getElementById('lan-hist-btn');
+  if(el)el.style.display=lanHistOpen?'block':'none';
+  if(btn){btn.textContent=lanHistOpen?'Ocultar':'Ver';btn.classList.toggle('on',lanHistOpen);}
+  if(lanHistOpen){
+    const ws=getWeekStart(today());
+    const older=(appState.fin.lan||[]).filter(l=>(l.data||'')<ws).sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id-a.id);
+    renderLanHist(older);
+  }
 }
 
 // ── AGENDA ────────────────────────────────────────────────────────────────────
