@@ -535,28 +535,33 @@ html, body {
 
   <div class="week-strip" id="week-strip"></div>
 
+  <div class="card" style="border-color:rgba(167,139,250,0.35);border-left:3px solid var(--purple)">
+    <div class="card-lbl"><span>Hábitos Diários</span><span style="color:var(--purple);font-size:10px;font-weight:600;letter-spacing:.1em">INEGOCIÁVEL</span></div>
+    <div id="h-diarios"></div>
+  </div>
+
   <div class="card">
     <div class="card-lbl"><span>08:30 — Despertar</span><span class="card-lbl-accent">Fundação</span></div>
     <div id="h-despertar"></div>
   </div>
   <div class="card">
-    <div class="card-lbl"><span>08:45 — Café + Leitura</span></div>
+    <div class="card-lbl"><span>08:40 — Café + Vitaminas + Leitura</span></div>
     <div id="h-cafe"></div>
   </div>
   <div class="card">
-    <div class="card-lbl"><span>09:30 — Trabalho</span></div>
+    <div class="card-lbl"><span>09:25 — Inglês Bloco 1 + Trabalho</span></div>
     <div id="h-trabalho"></div>
   </div>
   <div class="card">
-    <div class="card-lbl"><span>13:00 — Inglês DET</span><span style="color:var(--blue);font-size:10px;font-weight:600">DET</span></div>
+    <div class="card-lbl"><span>13:45 — Bloco 2 Inglês / 20:00 — Bloco 3</span><span style="color:var(--blue);font-size:10px;font-weight:600">DET</span></div>
     <div id="h-ingles"></div>
   </div>
   <div class="card">
-    <div class="card-lbl"><span>Tarde — Corpo</span></div>
+    <div class="card-lbl"><span>16:00 — Treino</span></div>
     <div id="h-tarde"></div>
   </div>
   <div class="card">
-    <div class="card-lbl"><span>00:00 — Encerramento</span></div>
+    <div class="card-lbl"><span>21:00 — Encerramento</span></div>
     <div id="h-enc"></div>
   </div>
 </div>
@@ -817,6 +822,13 @@ const DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
 const DAYS_FULL=['Domingo','Segunda','Terca','Quarta','Quinta','Sexta','Sabado'];
 
 const habitsData={
+  diarios:[
+    {id:'porn',t:'Zero pornografia',w:'Sem negociacao. Clareza mental e proposito.',tag:'f'},
+    {id:'oracao_comer',t:'Oracao ao se alimentar',w:'Gratidao antes de comer. Ancora espiritual em cada refeicao.',tag:'m'},
+    {id:'scrolling',t:'Pouco scrolling sem intencao',w:'Nao e lazer, e sequestro de atencao. Protege o foco.',tag:'f'},
+    {id:'agua',t:'2L de agua no dia',w:'Inegociavel. Funcao cognitiva e energia dependem disso.',tag:'f'},
+    {id:'pessoas',t:'Tempo com pessoas que ama',w:'Familia, amigos, conexao real. Nao conta tela.',tag:'n'},
+  ],
   despertar:[
     {id:'acorda',t:'Acordei as 08:30',w:'Horario fixo. Nao negocia.',tag:'m'},
     {id:'cama',t:'Arrumei a cama',w:'Primeira vitoria do dia.',tag:'m'},
@@ -826,33 +838,28 @@ const habitsData={
   cafe:[
     {id:'cafe',t:'Fez o cafe',w:'Ritual que sinaliza inicio da manha produtiva.',tag:'m'},
     {id:'vitaminas',t:'Vitaminas (B12 + Creatina + D)',w:'Substrato cognitivo do dia.',tag:'m'},
-    {id:'leitura',t:'Leitura com caderno (10 paginas)',w:'Caderno aberto. 1 licao anotada.',tag:'m'},
-
+    {id:'leitura',t:'Leitura — Principios Ray Dalio (10 paginas)',w:'Caderno aberto. 1 licao anotada.',tag:'m'},
   ],
   trabalho:[
-    {id:'duolingo',t:'Duolingo 10-15 min',w:'Aquecimento linguistico antes do modo profundo.',tag:'m'},
-    {id:'ritual',t:'Notebook aberto — modo profundo',w:'Este gesto e o interruptor. Liga o foco.',tag:'m'},
+    {id:'bloco1_ing',t:'Bloco 1 Ingles — Vocabulario + Estrutura',w:'Arno Vocab Builder 20 palavras + Teacher Luke DET.',tag:'det'},
+    {id:'call',t:'Call de alinhamento (10:00)',w:'Diario pos-call. Verificar emails e operacional.',tag:'m'},
     {id:'profundo',t:'Trabalho profundo LF Services (90min+)',w:'Sem interrupcao. Uma tarefa principal.',tag:'m'},
     {id:'decisao',t:'1 decisao importante tomada',w:'A voz que adia e o governador mental. Decida.',tag:'m'},
   ],
   ingles:[
-    {id:'shadowing',t:'Shadowing ingles 10min em voz alta',w:'Repete frases. Pronuncia + fluencia.',tag:'det'},
-    {id:'det',t:'Pratica DET 30min (DETPractice / Teacher Luke)',w:'S1-2: Read+Listen. S3-4: Write+Speak. S5-6: mocks.',tag:'det'},
+    {id:'bloco2_ing',t:'Bloco 2 Ingles — Pratica ativa (13:45)',w:'Trabalho tem prioridade. Simulado mensal quando aplicavel.',tag:'det'},
+    {id:'bloco3_ing',t:'Bloco 3 Ingles — B99 Netflix (20:00, 2 ep.)',w:'Audio ingles, legenda ingles. Imersao noturna.',tag:'det'},
   ],
   tarde:[
-    {id:'alimentacao',t:'Alimentacao limpa',w:'Combustivel, nao prazer.',tag:'f'},
-    {id:'agua',t:'2L de agua no dia',w:'Inegociavel.',tag:'f'},
-    {id:'treino',t:'Treino / movimento (30min+)',w:'Corpo parado e mente parada.',tag:'t'},
-    {id:'imersao',t:'Imersao inglês: YouTube/podcast sem legenda PT',w:'30min. Ambiente, nao estudo.',tag:'n'},
-    {id:'scroll',t:'Zero scrolling sem intencao',w:'Nao e lazer, e sequestro.',tag:'f'},
-    {id:'porn',t:'Zero pornografia',w:'Sem negociacao.',tag:'f'},
+    {id:'almoco',t:'Almoco sentado, sem tela (13:00)',w:'Refeicao com intencao. Combustivel, nao prazer.',tag:'f'},
+    {id:'treino',t:'JJ / Academia (16:00)',w:'Corpo parado e mente parada. Inegociavel.',tag:'t'},
+    {id:'retorno',t:'Retorno + higiene + tempo livre',w:'Transicao consciente. Descomprime.',tag:'f'},
   ],
   enc:[
-    {id:'biblia',t:'Leitura da Biblia',w:'Encerra o dia com a mesma ancora que o abriu.',tag:'n'},
+    {id:'biblia',t:'Biblia — 3 capitulos (Genesis em diante)',w:'Encerra o dia com a mesma ancora que o abriu.',tag:'n'},
     {id:'oracao_noite',t:'Oracao de agradecimento',w:'Gratidao pelo dia. Entrega do dia seguinte.',tag:'n'},
     {id:'revisao',t:'Revisao: acerto / falha / ajuste amanha',w:'Sem reflexao o sistema nao aprende. 2min.',tag:'n'},
-    {id:'telas',t:'Telas off 30min antes de dormir',w:'Sono de qualidade comeca aqui.',tag:'n'},
-    {id:'dorme',t:'Dormindo as 00:30',w:'Horario fixo.',tag:'n'},
+    {id:'dorme',t:'Dormindo as 00:00',w:'Horario fixo.',tag:'n'},
   ]
 };
 
@@ -973,6 +980,7 @@ function renderHeader(){
 function renderHabitos(){
   renderWeekStrip();
   const sections=[
+    {key:'diarios',el:'h-diarios'},
     {key:'despertar',el:'h-despertar'},
     {key:'cafe',el:'h-cafe'},
     {key:'trabalho',el:'h-trabalho'},
