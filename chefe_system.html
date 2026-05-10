@@ -486,6 +486,59 @@ html, body {
 .fogo-txt { flex:1; font-size:13px; color:var(--text); font-weight:500; cursor:pointer; }
 .fogo-txt.on { color:var(--muted); text-decoration:line-through; }
 
+/* AGENDA */
+.ag-hoje-card {
+  background: var(--accent-dim);
+  border: 1px solid rgba(200,245,66,0.3);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.ag-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ag-event:last-child { border-bottom: none; }
+.ag-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 36px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.ag-desc { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.4; }
+.ag-date-sep {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 4px;
+  font-family: 'DM Mono', monospace;
+}
+.ag-date-sep.hoje { color: var(--accent); }
+.ag-tipo {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 100px;
+  flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+  margin-top: 2px;
+  letter-spacing: .03em;
+}
+.ag-saude { background: var(--red-dim); color: var(--red); }
+.ag-pessoal { background: var(--purple-dim); color: var(--purple); }
+.ag-trabalho { background: var(--blue-dim); color: var(--blue); }
+.ag-outro { background: var(--border2); color: var(--muted); }
+.ag-form-col { display: flex; flex-direction: column; gap: 8px; }
+.ag-row { display: flex; gap: 8px; }
+
 /* SCROLL */
 ::-webkit-scrollbar { width:0; }
 </style>
@@ -516,6 +569,7 @@ html, body {
   <button class="nav-btn" onclick="showSec('operacional')">Operacional</button>
   <button class="nav-btn" onclick="showSec('treino')">Treino</button>
   <button class="nav-btn" onclick="showSec('financeiro')">Financeiro</button>
+  <button class="nav-btn" onclick="showSec('agenda')">Agenda</button>
   <button class="nav-btn" onclick="showSec('mantra')">Mantra</button>
 </div>
 
@@ -713,6 +767,39 @@ html, body {
   <button class="save-btn primary" onclick="saveMetas()">Salvar metas</button>
 </div>
 
+<!-- AGENDA -->
+<div id="sec-agenda" class="sec">
+  <div class="sec-title">Agenda</div>
+  <div class="sec-sub">Compromissos pontuais — médico, dentista, reunião.</div>
+
+  <div id="ag-hoje-wrap"></div>
+
+  <div class="card">
+    <div class="card-lbl">Novo compromisso</div>
+    <div class="ag-form-col">
+      <input class="lan-inp" id="ag-desc" placeholder="Ex: Médico cardiologista" style="width:100%"/>
+      <div class="ag-row">
+        <input class="lan-inp" id="ag-data" type="date" style="flex:2"/>
+        <input class="lan-inp" id="ag-hora" type="time" style="flex:1"/>
+      </div>
+      <div class="ag-row">
+        <select class="lan-sel" id="ag-tipo" style="flex:1;padding:9px 10px;font-size:12px">
+          <option value="saude">Saúde</option>
+          <option value="pessoal">Pessoal</option>
+          <option value="trabalho">Trabalho</option>
+          <option value="outro">Outro</option>
+        </select>
+        <button class="lan-btn" onclick="addEvento()" style="flex:1">Agendar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Próximos compromissos</div>
+    <div id="ag-list"></div>
+  </div>
+</div>
+
 <!-- MANTRA -->
 <div id="sec-mantra" class="sec">
   <div class="sec-title">Mantra</div>
@@ -805,6 +892,14 @@ html, body {
       <circle cx="11" cy="11" r="8"/><path d="M11 7v1.5M11 13.5V15M8.5 9.5C8.5 8.4 9.6 8 11 8s2.5.9 2.5 2c0 2-4 2-4 4 0 1.1 1.1 2 2.5 2s2.5-.9 2.5-2"/>
     </svg>
     <span class="bn-lbl">Fin.</span>
+  </button>
+  <button class="bn-btn" onclick="showSec('agenda')" id="bn-agenda">
+    <svg class="bn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="3" y="4" width="16" height="15" rx="2"/>
+      <path d="M7 2v4M15 2v4M3 9h16"/>
+      <path d="M7 13h2M13 13h2M7 17h2" stroke-linecap="round"/>
+    </svg>
+    <span class="bn-lbl">Agenda</span>
   </button>
   <button class="bn-btn" onclick="showSec('mantra')" id="bn-mantra">
     <svg class="bn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -945,6 +1040,7 @@ let appState={
   treino:JSON.parse(JSON.stringify(treinoDefault)),
   fogo:{},opDone:{},
   fin:{prolabore:0,extra:0,despesa:2000,lan:[],metas:{resAlvo:0,resAtual:0,aporte:0,espNome:'',espAlvo:0,espAtual:0}},
+  eventos:[],
 };
 try{const s=localStorage.getItem('chefe_app');if(s){const p=JSON.parse(s);Object.assign(appState,p);}}catch(e){}
 if(!localStorage.getItem('treino_v3')){appState.treino=JSON.parse(JSON.stringify(treinoDefault));localStorage.setItem('treino_v3','1');try{localStorage.setItem('chefe_app',JSON.stringify(appState));}catch(e){}}
@@ -968,6 +1064,7 @@ function showSec(id){
   if(id==='operacional')renderOperacional();
   if(id==='treino')renderTreino();
   if(id==='financeiro')loadFin();
+  if(id==='agenda')renderAgenda();
 }
 
 // ── HEADER ────────────────────────────────────────────────────────────────────
@@ -1362,6 +1459,83 @@ function saveMetas(){
     espAtual:parseFloat(document.getElementById('m-esp-atual').value)||0,
   };
   save();calcMetas();
+}
+
+// ── AGENDA ────────────────────────────────────────────────────────────────────
+const AG_TIPO_MAP={saude:['Saúde','ag-saude'],pessoal:['Pessoal','ag-pessoal'],trabalho:['Trabalho','ag-trabalho'],outro:['Outro','ag-outro']};
+const AG_MONTHS=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const AG_DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+
+function fmtAgDate(dateStr){
+  const d=new Date(dateStr+'T12:00:00');
+  return `${AG_DAYS[d.getDay()]}, ${d.getDate()} ${AG_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function renderAgenda(){
+  renderAgHoje();
+  renderAgList();
+}
+
+function renderAgHoje(){
+  const wrap=document.getElementById('ag-hoje-wrap');if(!wrap)return;
+  const td=today();
+  const ev=(appState.eventos||[]).filter(e=>e.data===td).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+  if(ev.length===0){wrap.innerHTML='';return;}
+  let html=`<div class="ag-hoje-card"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;font-family:'DM Mono',monospace">HOJE</div>`;
+  ev.forEach(e=>{
+    const[tl,tc]=AG_TIPO_MAP[e.tipo]||['Outro','ag-outro'];
+    html+=`<div class="ag-event"><span class="ag-time">${e.hora||'—'}</span><span class="ag-desc">${e.desc}</span><span class="ag-tipo ${tc}">${tl}</span></div>`;
+  });
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
+function renderAgList(){
+  const el=document.getElementById('ag-list');if(!el)return;
+  const td=today();
+  const fut=(appState.eventos||[]).filter(e=>e.data>=td).sort((a,b)=>a.data.localeCompare(b.data)||(a.hora||'').localeCompare(b.hora||''));
+  const past=(appState.eventos||[]).filter(e=>e.data<td).sort((a,b)=>b.data.localeCompare(a.data));
+  if(fut.length===0&&past.length===0){el.innerHTML='<div class="empty">Nenhum compromisso agendado.</div>';return;}
+  el.innerHTML='';
+  let lastDate='';
+  fut.forEach(e=>{
+    if(e.data!==lastDate){
+      lastDate=e.data;
+      const isT=e.data===td;
+      el.innerHTML+=`<div class="ag-date-sep${isT?' hoje':''}">${isT?'HOJE':fmtAgDate(e.data)}</div>`;
+    }
+    const[tl,tc]=AG_TIPO_MAP[e.tipo]||['Outro','ag-outro'];
+    el.innerHTML+=`<div class="ag-event"><span class="ag-time">${e.hora||'—'}</span><span class="ag-desc">${e.desc}</span><span class="ag-tipo ${tc}">${tl}</span><button class="g-del" onclick="delEvento(${e.id})" style="opacity:0.4;font-size:14px;margin-top:1px">×</button></div>`;
+  });
+  if(past.length>0){
+    el.innerHTML+=`<div class="ag-date-sep" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">Anteriores</div>`;
+    let lastP='';
+    past.forEach(e=>{
+      if(e.data!==lastP){lastP=e.data;el.innerHTML+=`<div class="ag-date-sep" style="color:var(--muted2)">${fmtAgDate(e.data)}</div>`;}
+      const[tl,tc]=AG_TIPO_MAP[e.tipo]||['Outro','ag-outro'];
+      el.innerHTML+=`<div class="ag-event" style="opacity:0.4"><span class="ag-time">${e.hora||'—'}</span><span class="ag-desc" style="text-decoration:line-through">${e.desc}</span><span class="ag-tipo ${tc}">${tl}</span><button class="g-del" onclick="delEvento(${e.id})" style="opacity:0.6;font-size:14px;margin-top:1px">×</button></div>`;
+    });
+  }
+}
+
+function addEvento(){
+  const desc=document.getElementById('ag-desc').value.trim();
+  const data=document.getElementById('ag-data').value;
+  const hora=document.getElementById('ag-hora').value;
+  const tipo=document.getElementById('ag-tipo').value;
+  if(!desc||!data)return;
+  if(!appState.eventos)appState.eventos=[];
+  appState.eventos.push({id:Date.now(),data,hora,desc,tipo});
+  document.getElementById('ag-desc').value='';
+  document.getElementById('ag-data').value='';
+  document.getElementById('ag-hora').value='';
+  save();renderAgenda();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement.id==='ag-desc')addEvento();});
+
+function delEvento(id){
+  appState.eventos=(appState.eventos||[]).filter(e=>e.id!==id);
+  save();renderAgenda();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
