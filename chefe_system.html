@@ -509,6 +509,23 @@ html, body {
 .fogo-txt { flex:1; font-size:13px; color:var(--text); font-weight:500; cursor:pointer; }
 .fogo-txt.on { color:var(--muted); text-decoration:line-through; }
 
+/* AÇÕES FINANCEIRO */
+.lan-actions { display:flex; gap:8px; margin-bottom:10px; }
+.lan-action-btn {
+  flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+  padding:10px 12px;
+  border-radius:var(--r);
+  border:1px solid var(--border2);
+  background:var(--surface);
+  color:rgba(255,255,255,0.5);
+  font-size:12px; font-weight:600;
+  cursor:pointer; font-family:'Syne',sans-serif;
+  letter-spacing:.03em;
+  transition:all .2s;
+}
+.lan-copy-btn:active { border-color:var(--accent); color:var(--accent); }
+.lan-del-all-btn:active { border-color:var(--red); color:var(--red); }
+
 /* MÉTODO PAGAMENTO */
 .g-cred { background:var(--purple-dim); color:var(--purple); }
 .g-pix  { background:var(--accent-dim); color:var(--accent); }
@@ -714,7 +731,7 @@ html, body {
 <!-- FINANCEIRO -->
 <div id="sec-financeiro" class="sec">
   <div class="sec-title">Financeiro</div>
-  <div class="sec-sub">Registre seus gastos. Toda quinta, copie para a planilha.</div>
+  <div class="sec-sub">Registre seus gastos e copie para a planilha.</div>
 
   <div class="card">
     <div class="card-lbl">Novo lançamento</div>
@@ -733,21 +750,22 @@ html, body {
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-lbl">
-      <span id="lan-semana-lbl">Esta semana</span>
-      <span id="lan-semana-total" style="color:var(--text);font-family:'DM Mono',monospace;font-size:12px;font-weight:700"></span>
-    </div>
-    <div id="lan-semana-list"></div>
+  <div class="lan-actions">
+    <button class="lan-action-btn lan-copy-btn" onclick="copyLan()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      Copiar para planilha
+    </button>
+    <button class="lan-action-btn lan-del-all-btn" id="del-all-btn" onclick="deleteAllLan()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+      <span id="del-all-lbl">Excluir tudo</span>
+    </button>
   </div>
 
-  <div class="card" id="lan-hist-card" style="display:none">
-    <div class="card-lbl">
-      <span>Semanas anteriores</span>
-      <button class="edit-toggle" id="lan-hist-btn" onclick="toggleLanHist()">Ver</button>
-    </div>
-    <div id="lan-hist-list" style="display:none"></div>
-  </div>
+  <div id="lan-all-list"></div>
 </div>
 
 <!-- AGENDA -->
@@ -1329,16 +1347,11 @@ function delEx(d,i){appState.treino[d].ex.splice(i,1);save();renderExList(d);}
 
 // ── FINANCEIRO ────────────────────────────────────────────────────────────────
 const MET_MAP={credito:['Crédito','g-cred'],pix:['Pix','g-pix'],ted:['TED','g-ted'],dinheiro:['Dinheiro','g-din']};
+const LAN_DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+const LAN_MONTHS=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-function getWeekStart(dateStr){
-  const d=new Date(dateStr+'T12:00:00');
-  const dow=d.getDay();
-  const back=(dow>=4)?dow-4:dow+3;
-  d.setDate(d.getDate()-back);
-  return d.toISOString().slice(0,10);
-}
-function getWeekEnd(ws){const d=new Date(ws+'T12:00:00');d.setDate(d.getDate()+6);return d.toISOString().slice(0,10);}
 function fmtDMY(ds){const d=new Date(ds+'T12:00:00');return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;}
+function fmtDayHdr(ds){const d=new Date(ds+'T12:00:00');return `${LAN_DAYS[d.getDay()]}, ${d.getDate()} ${LAN_MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 
 function loadFin(){renderLan();}
 
@@ -1361,67 +1374,81 @@ document.addEventListener('DOMContentLoaded',()=>{
 function makeLanRow(l){
   const[mt,mc]=MET_MAP[l.metodo]||['?','g-din'];
   const row=document.createElement('div');row.className='gasto-item';
-  const dateTag=l.data?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;flex-shrink:0">${fmtDMY(l.data)}</span>`:'';
-  row.innerHTML=`<span class="gasto-lbl ${mc}">${mt}</span>${dateTag}<span class="g-name">${l.desc}</span><span class="g-val">R$${l.val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><button class="g-del" onclick="delLan(${l.id})">×</button>`;
+  row.innerHTML=`<span class="gasto-lbl ${mc}">${mt}</span><span class="g-name">${l.desc}</span><span class="g-val">R$${l.val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><button class="g-del" onclick="delLan(${l.id})">×</button>`;
   return row;
 }
 
 function renderLan(){
-  const td=today();
-  const ws=getWeekStart(td);
-  const all=(appState.fin.lan||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id-a.id);
-  const thisWeek=all.filter(l=>(l.data||'')>=ws);
-  const older=all.filter(l=>(l.data||'')<ws);
-
-  const lblEl=document.getElementById('lan-semana-lbl');
-  if(lblEl)lblEl.textContent=`Qui ${fmtDMY(ws)} → Qua ${fmtDMY(getWeekEnd(ws))}`;
-
-  const totEl=document.getElementById('lan-semana-total');
-  const weekSum=thisWeek.reduce((s,l)=>s+(l.val||0),0);
-  if(totEl)totEl.textContent=thisWeek.length?'R$'+weekSum.toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
-
-  const semEl=document.getElementById('lan-semana-list');
-  if(semEl){
-    semEl.innerHTML='';
-    if(thisWeek.length===0){semEl.innerHTML='<div class="empty">Nenhum lançamento nesta semana.</div>';}
-    else thisWeek.forEach(l=>semEl.appendChild(makeLanRow(l)));
-  }
-
-  const histCard=document.getElementById('lan-hist-card');
-  if(histCard)histCard.style.display=older.length?'block':'none';
-  if(lanHistOpen)renderLanHist(older);
-}
-
-function renderLanHist(older){
-  const el=document.getElementById('lan-hist-list');if(!el)return;
+  const el=document.getElementById('lan-all-list');if(!el)return;
   el.innerHTML='';
-  const weeks={};
-  older.forEach(l=>{const ws=l.data?getWeekStart(l.data):'old';if(!weeks[ws])weeks[ws]=[];weeks[ws].push(l);});
-  Object.keys(weeks).sort((a,b)=>b.localeCompare(a)).forEach(ws=>{
-    const items=weeks[ws];
-    const sum=items.reduce((s,l)=>s+(l.val||0),0);
-    const lbl=ws!=='old'?`Qui ${fmtDMY(ws)} → Qua ${fmtDMY(getWeekEnd(ws))}`:'Anteriores';
-    const hdr=document.createElement('div');hdr.className='lan-week-hdr';
-    hdr.innerHTML=`<span>${lbl}</span><span class="lan-week-total">R$${sum.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
-    el.appendChild(hdr);
-    items.forEach(l=>el.appendChild(makeLanRow(l)));
+  const all=(appState.fin.lan||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id-a.id);
+  if(all.length===0){el.innerHTML='<div class="card"><div class="empty">Nenhum lançamento ainda.</div></div>';return;}
+
+  const byDay={};
+  all.forEach(l=>{const d=l.data||'0000-00-00';if(!byDay[d])byDay[d]=[];byDay[d].push(l);});
+
+  Object.keys(byDay).sort((a,b)=>b.localeCompare(a)).forEach(d=>{
+    const items=byDay[d];
+    const total=items.reduce((s,l)=>s+(l.val||0),0);
+    const isToday=d===today();
+
+    const card=document.createElement('div');card.className='card';
+    card.style.cssText=isToday?'border-color:rgba(200,245,66,0.25)':'';
+
+    const hdr=document.createElement('div');hdr.className='card-lbl';
+    hdr.innerHTML=`<span style="${isToday?'color:var(--accent)':''}">${isToday?'HOJE — '+fmtDayHdr(d):fmtDayHdr(d)}</span><span style="color:var(--text);font-family:'DM Mono',monospace;font-size:12px;font-weight:700">R$${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
+    card.appendChild(hdr);
+
+    items.forEach(l=>card.appendChild(makeLanRow(l)));
+    el.appendChild(card);
   });
 }
 
 function delLan(id){appState.fin.lan=(appState.fin.lan||[]).filter(l=>l.id!==id);save();renderLan();}
 
-let lanHistOpen=false;
-function toggleLanHist(){
-  lanHistOpen=!lanHistOpen;
-  const el=document.getElementById('lan-hist-list');
-  const btn=document.getElementById('lan-hist-btn');
-  if(el)el.style.display=lanHistOpen?'block':'none';
-  if(btn){btn.textContent=lanHistOpen?'Ocultar':'Ver';btn.classList.toggle('on',lanHistOpen);}
-  if(lanHistOpen){
-    const ws=getWeekStart(today());
-    const older=(appState.fin.lan||[]).filter(l=>(l.data||'')<ws).sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id-a.id);
-    renderLanHist(older);
+let delAllStep=0,delAllTimer=null;
+function deleteAllLan(){
+  if((appState.fin.lan||[]).length===0)return;
+  if(delAllStep===0){
+    delAllStep=1;
+    const lbl=document.getElementById('del-all-lbl');
+    const btn=document.getElementById('del-all-btn');
+    if(lbl)lbl.textContent='Confirmar exclusão?';
+    if(btn)btn.style.background='rgba(255,107,107,0.25)';
+    delAllTimer=setTimeout(()=>{
+      delAllStep=0;
+      if(lbl)lbl.textContent='Excluir tudo';
+      if(btn)btn.style.background='';
+    },4000);
+  } else {
+    clearTimeout(delAllTimer);
+    delAllStep=0;
+    appState.fin.lan=[];
+    save();renderLan();
+    const lbl=document.getElementById('del-all-lbl');
+    const btn=document.getElementById('del-all-btn');
+    if(lbl)lbl.textContent='Excluir tudo';
+    if(btn)btn.style.background='';
   }
+}
+
+function copyLan(){
+  const all=(appState.fin.lan||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id-a.id);
+  if(all.length===0)return;
+  const[mt]=MET_MAP['credito'];
+  const lines=all.map(l=>{
+    const[mt]=MET_MAP[l.metodo]||['?'];
+    return `${fmtDMY(l.data||'')}\t${mt}\t${l.desc}\t${l.val.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  });
+  const txt='Data\tMétodo\tDescrição\tValor\n'+lines.join('\n');
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.querySelector('.lan-copy-btn');
+    if(!btn)return;
+    const orig=btn.innerHTML;
+    btn.innerHTML=btn.innerHTML.replace('Copiar para planilha','Copiado ✓');
+    btn.style.borderColor='var(--accent)';btn.style.color='var(--accent)';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.borderColor='';btn.style.color='';},2500);
+  });
 }
 
 // ── AGENDA ────────────────────────────────────────────────────────────────────
