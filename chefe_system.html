@@ -591,6 +591,52 @@ html, body {
 .ag-form-col { display: flex; flex-direction: column; gap: 8px; }
 .ag-row { display: flex; gap: 8px; }
 
+/* DAY NAV */
+.day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.day-nav-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.day-nav-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.day-nav-hoje {
+  font-size: 11px; font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: .04em;
+}
+.day-plan-card {
+  background: var(--surface2);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.day-plan-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+}
+.day-plan-row strong { color: var(--text); font-size: 13px; }
+.wday { cursor: pointer; transition: all .15s; }
+.wday.selected { border-color: rgba(255,255,255,0.35) !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.1); }
+.wday.today.selected { border-color: var(--accent) !important; }
+
 /* SCROLL */
 ::-webkit-scrollbar { width:0; }
 </style>
@@ -640,6 +686,8 @@ html, body {
   </div>
 
   <div class="week-strip" id="week-strip"></div>
+
+  <div id="h-day-nav"></div>
 
   <div class="card" style="border-color:rgba(167,139,250,0.35);border-left:3px solid var(--purple)">
     <div class="card-lbl"><span>Hábitos Diários</span><span style="color:var(--purple);font-size:10px;font-weight:600;letter-spacing:.1em">INEGOCIÁVEL</span></div>
@@ -1040,6 +1088,11 @@ const treinoDefault={
   ]},
 };
 
+// VIEW DATE (navegação por dia)
+let viewDate=null;
+function getViewDate(){return viewDate||today();}
+function setViewDate(ds){viewDate=ds;renderHabitos();}
+
 // STATE
 let appState={
   habits:{},hist:[],
@@ -1086,7 +1139,9 @@ function renderHeader(){
 
 // ── HABITOS ───────────────────────────────────────────────────────────────────
 function renderHabitos(){
+  if(!viewDate)viewDate=today();
   renderWeekStrip();
+  renderDayNav();
   const sections=[
     {key:'diarios',el:'h-diarios'},
     {key:'despertar',el:'h-despertar'},
@@ -1100,16 +1155,49 @@ function renderHabitos(){
   updateHMetrics();
 }
 
+const H_MONTHS=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+function renderDayNav(){
+  const el=document.getElementById('h-day-nav');if(!el)return;
+  const vd=getViewDate();
+  const td=today();
+  if(vd===td){el.innerHTML='';return;}
+  const d=new Date(vd+'T12:00:00');
+  const isPast=vd<td;
+  const label=`${DAYS[d.getDay()]}, ${d.getDate()} ${H_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const tipo=isPast?'Dias anteriores':'Próximo dia';
+  el.innerHTML=`<div class="day-nav"><div><div class="day-nav-label">${label}</div><div class="day-nav-sub">${tipo}</div></div><button class="day-nav-hoje" onclick="setViewDate(today())">↩ Hoje</button></div>`;
+
+  if(!isPast){
+    const dow=d.getDay();
+    const treino=appState.treino[dow];
+    const trainNames={bjj:'Jiu-Jitsu',musc:'Academia',desc:'Descanso'};
+    const trainColors={bjj:'var(--blue)',musc:'var(--accent)',desc:'var(--muted)'};
+    const tName=treino?trainNames[treino.tipo]||'—':'—';
+    const tColor=treino?trainColors[treino.tipo]||'var(--muted)':'var(--muted)';
+    const tasks=(appState.semanal[dow]||[]);
+    let planHtml=`<div class="day-plan-card">`;
+    planHtml+=`<div class="day-plan-row"><span style="font-size:10px;font-weight:600;color:${tColor};font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase">Treino</span><strong style="color:${tColor}">${tName}</strong></div>`;
+    if(tasks.length>0){
+      planHtml+=`<div class="day-plan-row" style="flex-direction:column;align-items:flex-start;gap:3px"><span style="font-size:10px;font-weight:600;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">Operacional</span>`;
+      tasks.forEach(t=>{planHtml+=`<span style="font-size:12px;color:rgba(255,255,255,0.55)">· ${t.t}</span>`;});
+      planHtml+=`</div>`;
+    }
+    planHtml+=`</div>`;
+    el.innerHTML+=planHtml;
+  }
+}
+
 function renderHSection(key,elId){
   const el=document.getElementById(elId);if(!el)return;
   el.innerHTML='';
-  const td=today();
-  if(!appState.habits[td])appState.habits[td]={};
+  const vd=getViewDate();
+  if(!appState.habits[vd])appState.habits[vd]={};
   habitsData[key].forEach(h=>{
-    const done=!!appState.habits[td][h.id];
+    const done=!!appState.habits[vd][h.id];
     const row=document.createElement('div');
     row.className='hrow';
-    row.onclick=()=>{appState.habits[td][h.id]=!appState.habits[td][h.id];save();renderHSection(key,elId);updateHMetrics();renderWeekStrip();};
+    row.onclick=()=>{appState.habits[vd][h.id]=!appState.habits[vd][h.id];save();renderHSection(key,elId);updateHMetrics();renderWeekStrip();};
     const tagMap={m:'tag-m M',t:'tag-t T',n:'tag-n N',f:'tag-f F',det:'tag-det DET'};
     const [tc,tl]=(tagMap[h.tag]||'tag-f F').split(' ');
     row.innerHTML=`<div class="chk${done?' on':''}"><svg viewBox="0 0 11 8" fill="none"><path d="M1 4l3 3 6-6" stroke="#0c0c0e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div style="flex:1"><div class="htxt${done?' on':''}">${h.t}</div><div class="hwhy">${h.w}</div></div><span class="htag ${tc}">${tl}</span>`;
@@ -1118,8 +1206,9 @@ function renderHSection(key,elId){
 }
 
 function updateHMetrics(){
+  const vd=getViewDate();
   const td=today();
-  const state=appState.habits[td]||{};
+  const state=appState.habits[vd]||{};
   const allH=Object.values(habitsData).flat();
   const total=allH.length;
   const done=Object.values(state).filter(Boolean).length;
@@ -1127,9 +1216,11 @@ function updateHMetrics(){
   document.getElementById('h-pct').textContent=pct+'%';
   document.getElementById('h-bar').style.width=pct+'%';
   document.getElementById('h-cnt').textContent=done+'/'+total;
-  const ex=appState.hist.findIndex(d=>d.date===today());
-  if(ex>=0)appState.hist[ex].pct=pct;else appState.hist.push({date:today(),pct});
-  let streak=0,prev=today();
+  const pctLabel=document.querySelector('#h-bar')?.closest('.met')?.querySelector('.met-l');
+  if(pctLabel)pctLabel.textContent=vd===td?'Hoje':DAYS[new Date(vd+'T12:00:00').getDay()];
+  const ex=appState.hist.findIndex(d=>d.date===vd);
+  if(ex>=0)appState.hist[ex].pct=pct;else appState.hist.push({date:vd,pct});
+  let streak=0,prev=td;
   const sorted=[...appState.hist].sort((a,b)=>b.date.localeCompare(a.date));
   for(const d of sorted){const diff=(new Date(prev)-new Date(d.date))/86400000;if(diff<=1&&d.pct>=50){streak++;prev=d.date;}else break;}
   document.getElementById('h-streak').textContent=streak;
@@ -1140,25 +1231,38 @@ function renderWeekStrip(){
   const g=document.getElementById('week-strip');if(!g)return;
   g.innerHTML='';
   const now=new Date();
+  const td=today();
+  const vd=getViewDate();
   const trainIcon={bjj:'BJJ',musc:'AC',desc:'—'};
-  for(let i=0;i<=6;i++){
+  const trainColor={bjj:'var(--blue)',musc:'var(--accent)',desc:'var(--muted2)'};
+  for(let i=-3;i<=3;i++){
     const d=new Date(now);d.setDate(now.getDate()+i);
     const key=d.toISOString().slice(0,10);
-    const isT=i===0;
+    const isT=key===td;
+    const isSel=key===vd;
+    const isPast=key<td;
     const dow=d.getDay();
     const treino=appState.treino[dow];
+    const h=appState.hist.find(x=>x.date===key);
+    const cls=h&&isPast?(h.pct>=75?'good':h.pct>=40?'mid':''):'';
     const b=document.createElement('div');
+    let classes='wday';
+    if(isT)classes+=' today';
+    if(isSel)classes+=' selected';
+    if(cls)classes+=' '+cls;
+    b.className=classes;
+    b.onclick=()=>setViewDate(key);
+    let bottom='';
     if(isT){
-      const h=appState.hist.find(x=>x.date===key);
-      const cls=h?(h.pct>=75?'good':h.pct>=40?'mid':''):'';
-      b.className='wday today'+(cls?' '+cls:'');
-      b.innerHTML=`<div class="wd-l">${DAYS[dow]}</div><div class="wd-n">${d.getDate()}</div><div class="wd-p">${h&&h.pct>0?h.pct+'%':'hoje'}</div>`;
+      bottom=h&&h.pct>0?h.pct+'%':'·';
+    } else if(isPast){
+      bottom=h&&h.pct>0?h.pct+'%':'';
     } else {
-      const tLabel=treino?trainIcon[treino.tipo]||'':'';
-      const tColor=treino?.tipo==='bjj'?'color:var(--blue)':treino?.tipo==='musc'?'color:var(--accent)':'color:var(--muted2)';
-      b.className='wday';
-      b.innerHTML=`<div class="wd-l">${DAYS[dow]}</div><div class="wd-n">${d.getDate()}</div><div class="wd-p" style="${tColor};font-size:8px;font-weight:700">${tLabel}</div>`;
+      const tl=treino?trainIcon[treino.tipo]||'':'';
+      const tc=treino?trainColor[treino.tipo]||'var(--muted2)':'var(--muted2)';
+      bottom=`<span style="color:${tc};font-size:8px;font-weight:700">${tl}</span>`;
     }
+    b.innerHTML=`<div class="wd-l">${DAYS[dow]}</div><div class="wd-n">${d.getDate()}</div><div class="wd-p">${bottom}</div>`;
     g.appendChild(b);
   }
 }
